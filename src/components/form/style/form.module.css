@@ -1,0 +1,89 @@
+.input {
+    width: 20rem;
+    padding: 12px 15px;
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
+    outline: none;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    background-color: #f9fafb;
+}
+
+.input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    background-color: #ffffff;
+}
+
+.input:hover {
+    border-color: #9ca3af;
+}
+
+.passwordContainer {
+    position: relative;
+    margin-bottom: 1.5rem;
+    display: flex;
+    flex-direction: column
+}
+
+.passwordInput {
+    width: 20rem;
+    padding: 12px 15px;
+    padding-right: 40px;
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
+    outline: none;
+    font-size: 14px;
+    background-color: #f9fafb;
+    transition: all 0.3s ease;
+}
+
+.passwordInput:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+.togglePassword {
+    position: absolute;
+    right: 10px;
+    top: 60%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #6b7280;
+}
+
+.togglePassword:hover {
+    color: #3b82f6;
+}
+
+.passwordStrength {
+    height: 4px;
+    margin-top: 5px;
+    border-radius: 2px;
+    background: #e5e7eb;
+    width: 100%;
+}
+
+.strengthIndicator {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.3s ease, background 0.3s ease;
+}
+
+input[type="password"]::-ms-reveal {
+    display: none !important;
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    position: absolute;
+    right: -9999px;
+}
+
+.button {
+    padding: 5px 40px;
+    width: 20rem;
+    border-radius: 10px;
+    /* border: 0.1px solid black; */
+    background-color: #3b82f6;
+    color: white;
+}
