@@ -2,72 +2,71 @@ import { useState } from "react";
 import style from "./style/form.module.css";
 import { LoginI } from "../../interface/Login/LoginI";
 import { usePost } from "../../server/hook/usePost";
+import { toast } from "react-toastify";
+import { z } from "zod";
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useNavigate } from "react-router";
+
+const loginSchema = z.object({
+  email: z.string().email("El email es invalido").min(1, "Email es requerido"),
+  password: z.string()
+});
+
+type LoginFormData = z.infer<typeof loginSchema>;
 
 const FormLogin = () => {
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
-  const [dataSend, setDataSend] = useState<LoginI>({ email: "", password: "" });
-const { trigger } = usePost<LoginI, any>('Auth/login');
-
-  const getPasswordStrength = (pass: string) => {
-    if (pass.length === 0) return { width: "0%", color: "#e5e7eb" };
-    if (pass.length < 5) return { width: "30%", color: "#ef4444" };
-    if (pass.length < 8) return { width: "60%", color: "#f59e0b" };
-    return { width: "100%", color: "#10b981" };
-  };
-
-  const strength = getPasswordStrength(dataSend.password);
+  const { trigger } = usePost<LoginI, any>("Auth/login");
+  
+  const { 
+    register, 
+    handleSubmit, 
+    formState: { errors } 
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema), 
+  });
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setDataSend((prevData) => ({
-      ...prevData,
-      [name]: value,
-    }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const response = await trigger(dataSend);
-    console.log('response', response)
+  const onSubmit = async (data: LoginFormData) => {
+    try {
+      const response = await trigger(data);
+      toast.success(response.message);
+      navigate('/home')
+    } catch (error: any) {
+      toast.error(String(error?.response.data?.message));
+    }
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <h1 className="flex justify-center pb-11">Login</h1>
-
+    <form onSubmit={handleSubmit(onSubmit)}>
+      <h1 className="flex justify-center pb-11">Inicio de seccion</h1>
       <div className="flex flex-col mb-6">
-        <label>
-          Email <span className="text-red-500">*</span>
-        </label>
+        <label>Email <span className="text-red-500">*</span></label>
         <input
+          {...register("email")}
           type="email"
           className={style.input}
           placeholder="ejemplo@gmail.com"
-          autoComplete="on"
-          name="email"
-          onChange={handleChange}
-          value={dataSend.email}
         />
+        {errors.email && (
+          <p className="text-red-500 text-sm">{errors.email.message}</p>
+        )}
       </div>
 
       <div className={style.passwordContainer}>
-        <label>
-          Password <span className="text-red-500">*</span>
-        </label>
+        <label>Password <span className="text-red-500">*</span></label>
         <input
+          {...register("password")}
           type={showPassword ? "text" : "password"}
           className={style.passwordInput}
           placeholder="••••••••"
-          value={dataSend.password}
-          name="password"
-          onChange={handleChange}
-          autoComplete="current-password"
         />
-        <span
+         <span
           className={style.togglePassword}
           onClick={togglePasswordVisibility}
         >
@@ -99,14 +98,10 @@ const { trigger } = usePost<LoginI, any>('Auth/login');
             </svg>
           )}
         </span>
-        <div className={style.passwordStrength}>
-          <div
-            className={style.strengthIndicator}
-            style={{ width: strength.width, background: strength.color }}
-          ></div>
-        </div>
+        {errors.password && (
+          <p className="text-red-500 text-sm">{errors.password.message}</p>
+        )}
       </div>
-
       <button className={style.button} type="submit">
         Iniciar Sesión
       </button>

@@ -46,7 +46,7 @@
 .togglePassword {
     position: absolute;
     right: 10px;
-    top: 60%;
+    top: 68%;
     transform: translateY(-50%);
     cursor: pointer;
     color: #6b7280;
@@ -86,4 +86,5 @@ input[type="password"]::-ms-reveal {
     /* border: 0.1px solid black; */
     background-color: #3b82f6;
     color: white;
+    cursor: pointer;
 }

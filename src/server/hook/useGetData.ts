@@ -3,7 +3,6 @@ import Api from "../CustomFech"
 
 const fetcher = async (url: string) => {
    const res = await Api.get(url)
- console.log('res', res)
    return res.data 
 }
 

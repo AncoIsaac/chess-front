@@ -1,7 +1,7 @@
 import axios, { AxiosInstance } from 'axios';
 
 export const URL = import.meta.env.VITE_URL;
-export const URLSocket = import.meta.env.VITE_API_socket;
+// export const URLSocket = import.meta.env.VITE_API_socket;
 
 const Api: AxiosInstance = axios.create({
   baseURL: `${URL}`, // URL base de tu API
