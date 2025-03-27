@@ -2,8 +2,8 @@ import style from "./style/Sidebar.module.css";
 import {   House, Menu } from 'lucide-react';
 
 type SidebarProps = {
-  isCollapsed: boolean;
-  toggleSidebar: () => void;
+    toggleSidebar: () => void;
+    isCollapsed: boolean;
 };
 
 const Sidebar = ({isCollapsed, toggleSidebar}: SidebarProps) => {

@@ -3,22 +3,23 @@ import style from "./style/Navbar.module.css";
 import { useRef, useState } from "react";
 import useClickOutside from "../../hooks/useClickOutside";
 
-  const notifications = [
-    { id: 1, text: "Nuevo mensaje recibido", time: "Hace 5 minutos" },
-    { id: 2, text: "Tarea completada", time: "Hace 1 hora" },
-    { id: 3, text: "Recordatorio: Reunión a las 3 PM", time: "Hace 2 horas" },
-  ];
+const notifications = [
+  { id: 1, text: "Nuevo mensaje recibido", time: "Hace 5 minutos" },
+  { id: 2, text: "Tarea completada", time: "Hace 1 hora" },
+  { id: 3, text: "Recordatorio: Reunión a las 3 PM", time: "Hace 2 horas" },
+];
 
 const Navbar = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const notificationsRef = useRef<HTMLDivElement>(null);
+
+  const toggleNotifications = () => {
+    setShowNotifications((prev) => !prev);
+  };
+
   useClickOutside(notificationsRef as React.RefObject<HTMLElement>, () => {
     setShowNotifications(false);
   });
-
-  const toggleNotifications = () => {
-    setShowNotifications(!showNotifications);
-  };
 
   return (
     <div
@@ -38,7 +39,6 @@ const Navbar = () => {
               </span>
             )}
           </button>
-
           {showNotifications && (
             <div className={style.notificationsDropdown} ref={notificationsRef}>
               <div className={style.notificationsHeader}>
@@ -58,7 +58,6 @@ const Navbar = () => {
             </div>
           )}
         </li>
-
         <li>
           <button className={style.logoutButton}>
             <LogOut className="w-4 h-4" />

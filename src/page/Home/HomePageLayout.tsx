@@ -5,7 +5,7 @@ import Navbar from "../../components/navbar/Navbar";
 import useClickOutside from "../../hooks/useClickOutside";
 
 const HomePageLayout = () => {
-  const [isSidebarVisible, setIsSidebarVisible] = useState(true);
+  const [isSidebarVisible, setIsSidebarVisible] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
 
   const toggleSidebar = () => {
