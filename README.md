@@ -2,16 +2,20 @@
 
 Este proyecto es una aplicación de ajedrez desarrollada con React, TypeScript y Vite. Permite a los usuarios jugar partidas de ajedrez en un navegador web, con todas las reglas estándar del juego implementadas.
 
+![Chess Game Screenshot](./public/chess-screenshot.png)
+
 ## Características
 
-- Tablero de ajedrez interactivo
+- Tablero de ajedrez interactivo con piezas tradicionales
 - Movimientos legales según las reglas oficiales
-- Indicador de turno del jugador
-- Historial de movimientos
+- Indicador de turno del jugador (Blancas/Negras)
+- Historial de movimientos detallado
 - Detección de jaque y jaque mate
 - Promoción de peones
 - Interfaz de usuario intuitiva con barra lateral colapsable
 - Diseño responsive
+- Mensajes de fin de partida (victoria, empate)
+- Opción para reiniciar el juego en cualquier momento
 
 ## Tecnologías utilizadas
 
@@ -20,6 +24,7 @@ Este proyecto es una aplicación de ajedrez desarrollada con React, TypeScript y
 - Vite como herramienta de construcción
 - Lucide React para iconos
 - CSS Modules para estilos encapsulados
+- chess.js para la lógica del juego
 
 ## Cómo ejecutar el proyecto
 
@@ -31,9 +36,17 @@ Este proyecto es una aplicación de ajedrez desarrollada con React, TypeScript y
 ## Estructura del proyecto
 
 - `/src/components`: Componentes de React (incluye Sidebar y otros elementos de UI)
-- `/src/models`: Modelos y lógica del juego
-- `/src/hooks`: Custom hooks de React
+- `/src/page/chessBoard`: Componentes relacionados con el tablero de ajedrez
+- `/src/hooks`: Custom hooks de React, incluido useChessGame para la lógica del juego
 - `/src/utils`: Funciones de utilidad
+
+## Cómo jugar
+
+1. Las piezas blancas siempre mueven primero
+2. Haz clic en una pieza para seleccionarla
+3. Haz clic en una casilla válida para mover la pieza seleccionada
+4. El juego detectará automáticamente situaciones de jaque, jaque mate y empate
+5. Usa el botón "Reiniciar" para comenzar una nueva partida en cualquier momento
 
 ## Información de desarrollo
 
