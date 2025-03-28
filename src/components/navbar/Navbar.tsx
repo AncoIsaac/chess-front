@@ -27,20 +27,21 @@ const Navbar = () => {
     >
       <div className="text-white font-bold text-xl">MiApp</div>
       <ul className="flex items-center gap-6">
-        <li className="relative">
-          <button
-            onClick={toggleNotifications}
-            className={`p-2 rounded-full relative ${style.notificationBtn}`}
-          >
-            <Bell className="w-5 h-5" />
-            {notifications.length > 0 && (
-              <span className={style.notificationBadge}>
-                {notifications.length}
-              </span>
-            )}
-          </button>
-          {showNotifications && (
-            <div className={style.notificationsDropdown} ref={notificationsRef}>
+        <li className="relative ">
+          <div ref={notificationsRef}>
+            <button
+              onClick={toggleNotifications}
+              className={`p-2 rounded-full relative ${style.notificationBtn}`}
+            >
+              <Bell className="w-5 h-5" />
+              {notifications.length > 0 && (
+                <span className={style.notificationBadge}>
+                  {notifications.length}
+                </span>
+              )}
+            </button>
+           {showNotifications && (
+            <div className={style.notificationsDropdown}>
               <div className={style.notificationsHeader}>
                 <h3>Notificaciones ({notifications.length})</h3>
               </div>
@@ -56,7 +57,8 @@ const Navbar = () => {
                 <button>Ver todas</button>
               </div>
             </div>
-          )}
+              )}
+          </div>
         </li>
         <li>
           <button className={style.logoutButton}>

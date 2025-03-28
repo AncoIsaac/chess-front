@@ -1,0 +1,13 @@
+.chessBoard {
+    display: flex;
+    flex-direction: column;
+    width: min(90vw, 120vh);
+    height: min(80vw, 86vh);
+    border: 2px solid #333;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.row {
+    display: flex;
+    flex: 1;
+}

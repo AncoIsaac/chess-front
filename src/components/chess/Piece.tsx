@@ -16,7 +16,7 @@ const Piece = ({ type, color }: PieceProps) => {
   };
   const pieceColor = color === "w" ? "white" : "black"
 
-  return <div style={{ fontSize: "50px", color: pieceColor }}>{pieceSymbols[type]}</div>;
+  return <div style={{ fontSize: "60px", color: pieceColor }}>{pieceSymbols[type]}</div>;
 };
 
 export default Piece;

@@ -1,5 +1,6 @@
+import { Link } from "react-router";
 import style from "./style/Sidebar.module.css";
-import {   House, Menu } from 'lucide-react';
+import {   House, Menu, Play } from 'lucide-react';
 
 type SidebarProps = {
     toggleSidebar: () => void;
@@ -24,10 +25,16 @@ const Sidebar = ({isCollapsed, toggleSidebar}: SidebarProps) => {
       <nav className="p-1">
         <ul>
           <li className="mb-4">
-            <a className={`flex items-center gap-3 hover:text-gray-400 transition-colors ${isCollapsed ? 'justify-center' : ''}`}>
+            <Link to={'/home'} className={`flex items-center gap-3 hover:text-gray-400 transition-colors ${isCollapsed ? 'justify-center' : ''}`}>
               <House className="w-5 h-5 min-w-[20px]" />
               {!isCollapsed && <span className="whitespace-nowrap">Inicio</span>}
-            </a>
+            </Link>
+          </li>
+          <li className="mb-4">
+            <Link to={'chess'} className={`flex items-center gap-3 hover:text-gray-400 transition-colors ${isCollapsed ? 'justify-center' : ''}`}>
+              <Play className="w-5 h-5 min-w-[20px]" />
+              {!isCollapsed && <span className="whitespace-nowrap">Jugar</span>}
+            </Link>
           </li>
         </ul>
       </nav>

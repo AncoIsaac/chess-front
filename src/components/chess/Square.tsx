@@ -1,28 +1,41 @@
+import style from "./style/Square.module.css";
+
 interface SquareProps {
-    color: string;
-    onClick: () => void;
-    isSelected: boolean;
-    children?: React.ReactNode;
-  }
-  
-  const Square = ({ color, onClick, isSelected, children }: SquareProps) => {
-    
-    return (
-      <button
-        style={{
-          width: "50px",
-          height: "50px",
-          backgroundColor: isSelected ? "#ffff00" : color,
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          cursor: "pointer",
-        }}
-        onClick={onClick}
-      >
-        {children}
-      </button>
-    );
-  };
-  
-  export default Square;
+  color: string;
+  onClick: () => void;
+  isSelected: boolean;
+  isCheck: boolean;
+  isGameOver: boolean;
+  children?: React.ReactNode;
+}
+
+const Square1 = ({
+  color,
+  onClick,
+  isSelected,
+  isCheck,
+  isGameOver,
+  children,
+}: SquareProps) => {
+  return (
+    <button
+      className={style.square}
+      style={{
+        backgroundColor: color,
+        position: "relative", // Asegura que los elementos absolutos se posicionen correctamente
+      }}
+      onClick={isGameOver ? undefined : onClick}
+    >
+      {children}
+      {isSelected && <div className={style.selectedOverlay} />}
+      {isCheck && (
+        <>
+          <div className={style.checkKingIndicator}>🔥</div>
+        </>
+      )}
+     
+    </button>
+  );
+};
+
+export default Square1;

@@ -28,9 +28,8 @@ const HomePageLayout = () => {
       </div>
       <main className="pl-22 w-full">
         <Navbar/>
-        <section className='py-4 px-6 w-full  bg-amber-400'>
+        <section className='py-4 px-6 w-full '>
           <Outlet />
-          hoal
         </section>
       </main>
     </header>
