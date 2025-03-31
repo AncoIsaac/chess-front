@@ -1,6 +1,6 @@
 import { Outlet } from "react-router";
 import Sidebar from "../../components/Sidebar/Sidebar";
-import {  useRef, useState } from "react";
+import { useRef, useState } from "react";
 import Navbar from "../../components/navbar/Navbar";
 import useClickOutside from "../../hooks/useClickOutside";
 
@@ -19,16 +19,16 @@ const HomePageLayout = () => {
   return (
     <header>
       <div
-        ref={sidebarRef} 
+        ref={sidebarRef}
       >
         <Sidebar
           toggleSidebar={toggleSidebar}
           isCollapsed={!isSidebarVisible}
         />
       </div>
-      <main className="pl-22 w-full">
-        <Navbar/>
-        <section className='py-4 px-6 w-full '>
+      <main className="pl-10 w-full">
+        <Navbar />
+        <section className='py-4 px-4 w-full '>
           <Outlet />
         </section>
       </main>

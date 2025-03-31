@@ -15,14 +15,14 @@
 
 .notificationBadge {
   position: absolute;
-  top: -0.25rem;
-  right: -0.25rem;
-  background-color: #377fd1; /* red-500 */
+  background-color: red;
+  top: -0.10rem;
+  right: -0.13rem;
   color: white;
   font-size: 0.75rem;
   border-radius: 9999px;
-  height: 1.25rem;
-  width: 1.25rem;
+  height: .9rem;
+  width: .9rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -33,7 +33,7 @@
   align-items: center;
   gap: 0.5rem;
   background-color: #61c3d4; /* amber-500 */
-  padding: 0.5rem 1rem;
+  padding: 0.1rem 1rem;
   border-radius: 0.5rem;
   transition: background-color 0.2s;
 }

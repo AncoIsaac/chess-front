@@ -23,7 +23,7 @@ const Navbar = () => {
 
   return (
     <div
-      className={`${style.navbar} flex items-center justify-between py-4 px-6`}
+      className={`${style.navbar} flex items-center justify-between py-1 px-4`}
     >
       <div className="text-white font-bold text-xl">MiApp</div>
       <ul className="flex items-center gap-6">
@@ -31,38 +31,38 @@ const Navbar = () => {
           <div ref={notificationsRef}>
             <button
               onClick={toggleNotifications}
-              className={`p-2 rounded-full relative ${style.notificationBtn}`}
+              className={`p-1 rounded-full relative ${style.notificationBtn}`}
             >
-              <Bell className="w-5 h-5" />
+              <Bell className="w-4 h-4" />
               {notifications.length > 0 && (
                 <span className={style.notificationBadge}>
                   {notifications.length}
                 </span>
               )}
             </button>
-           {showNotifications && (
-            <div className={style.notificationsDropdown}>
-              <div className={style.notificationsHeader}>
-                <h3>Notificaciones ({notifications.length})</h3>
+            {showNotifications && (
+              <div className={style.notificationsDropdown}>
+                <div className={style.notificationsHeader}>
+                  <h3>Notificaciones ({notifications.length})</h3>
+                </div>
+                <ul className={style.notificationsList}>
+                  {notifications.map((notification) => (
+                    <li key={notification.id} className={style.notificationItem}>
+                      <p>{notification.text}</p>
+                      <small>{notification.time}</small>
+                    </li>
+                  ))}
+                </ul>
+                <div className={style.notificationsFooter}>
+                  <button>Ver todas</button>
+                </div>
               </div>
-              <ul className={style.notificationsList}>
-                {notifications.map((notification) => (
-                  <li key={notification.id} className={style.notificationItem}>
-                    <p>{notification.text}</p>
-                    <small>{notification.time}</small>
-                  </li>
-                ))}
-              </ul>
-              <div className={style.notificationsFooter}>
-                <button>Ver todas</button>
-              </div>
-            </div>
-              )}
+            )}
           </div>
         </li>
         <li>
           <button className={style.logoutButton}>
-            <LogOut className="w-4 h-4" />
+            <LogOut className="w-3 h-3" />
             <span>Cerrar sesión</span>
           </button>
         </li>
