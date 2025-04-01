@@ -23,7 +23,7 @@ const Navbar = () => {
 
   return (
     <div
-      className={`${style.navbar} flex items-center justify-between py-1 px-4`}
+      className={`${style.navbar} flex items-center justify-between py-[.4rem] px-4`}
     >
       <div className="text-white font-bold text-xl">MiApp</div>
       <ul className="flex items-center gap-6">

@@ -1,8 +1,9 @@
+import TimeOut from "../../test/TimeOut";
 
 const DashboardHome = () => {
 return (
   <div className=''>
- dashboard
+    <TimeOut/>
 </div>)
 };
 

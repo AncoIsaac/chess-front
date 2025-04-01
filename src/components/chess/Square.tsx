@@ -6,6 +6,7 @@ interface SquareProps {
   isSelected: boolean;
   isCheck: boolean;
   isGameOver: boolean;
+  isHighlighted?: boolean; // Nueva prop para movimientos válidos
   children?: React.ReactNode;
 }
 
@@ -15,25 +16,23 @@ const Square1 = ({
   isSelected,
   isCheck,
   isGameOver,
+  isHighlighted = false, // Valor por defecto
   children,
 }: SquareProps) => {
   return (
     <button
       className={style.square}
       style={{
-        backgroundColor: color,
-        position: "relative", // Asegura que los elementos absolutos se posicionen correctamente
+        backgroundColor: isHighlighted 
+          ? `color-mix(in srgb, ${color} 70%, #6b8e23)` 
+          : color,
+        position: "relative",
       }}
       onClick={isGameOver ? undefined : onClick}
     >
       {children}
       {isSelected && <div className={style.selectedOverlay} />}
-      {isCheck && (
-        <>
-          <div className={style.checkKingIndicator}>🔥</div>
-        </>
-      )}
-     
+      {isCheck && <div className={style.checkKingIndicator}>🔥</div>}
     </button>
   );
 };
