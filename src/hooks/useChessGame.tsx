@@ -100,7 +100,7 @@ const useChessGame = () => {
       } catch (error) {
         console.error("Movimiento inválido:", error);
       }
-      setSelectedSquare(null);
+      setSelectedSquare(square);
     }
   };
 
