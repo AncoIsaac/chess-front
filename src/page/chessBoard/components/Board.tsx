@@ -1,10 +1,14 @@
+import { useEffect, useState } from "react";
+import { Chess, Square } from "chess.js";
+// import Square1 from "./Square";
+// import Piece from "./Piece";
+// import TimerCom from "./Timer";
+// import { ChessBoard, GameResult, PieceColor } from "../types/chessTypes";
+import style from "../style/Board.module.css";
+import { ChessBoard, GameResult, PieceColor } from "../../../types/chessTypes";
+import TimerCom from "../../../components/timer/TimerCom";
 import Square1 from "../../../components/chess/Square";
 import Piece from "../../../components/chess/Piece";
-import { ChessBoard, PieceColor, GameResult } from "../../../types/chessTypes";
-import style from "../style/Board.module.css";
-import { Chess, Square } from "chess.js";
-import TimerCom from "../../../components/timer/TimerCom";
-import { useEffect, useState } from "react";
 
 type BoardProps = {
   board: ChessBoard;
@@ -15,24 +19,53 @@ type BoardProps = {
   game: Chess;
   isPlay: boolean;
   resetGame: (winner?: PieceColor | null, reason?: string) => void;
+  playerColor: PieceColor | null;
 };
 
 const Board = ({
-  board,
+  board = [], // Valor por defecto para board
   handleSquareClick,
   selectedSquare,
   currentTurn,
   gameResult,
   game,
   isPlay,
-  resetGame
+  resetGame,
+  playerColor,
 }: BoardProps) => {
-  const [blackTime, setBlackTime] = useState(1 * 60); // 1 minuto para negras
-  const [whiteTime, setWhiteTime] = useState(1 * 60); // 1 minuto para blancas
+  const [blackTime, setBlackTime] = useState(1 * 60);
+  const [whiteTime, setWhiteTime] = useState(1 * 60);
+  const shouldFlipBoard = playerColor === "b";
 
-  // Efecto para controlar el temporizador
+  // Función segura para acceder al tablero
+  const getPieceAt = (row: number, col: number) => {
+    if (!board || !board[row] || board[row][col] === undefined) {
+      return null;
+    }
+    return board[row][col];
+  };
+
+  // Convertir coordenadas visuales a lógicas
+  const visualToLogical = (visualRow: number, visualCol: number) => {
+    return shouldFlipBoard
+      ? { row: 7 - visualRow, col: 7 - visualCol }
+      : { row: visualRow, col: visualCol };
+  };
+
+  // Convertir notación algebraica a coordenadas visuales
+  const algebraicToVisual = (square: Square | null) => {
+    if (!square) return { visualRow: -1, visualCol: -1 };
+    
+    const col = square.charCodeAt(0) - 97;
+    const row = 8 - parseInt(square[1]);
+    return shouldFlipBoard
+      ? { visualRow: 7 - row, visualCol: 7 - col }
+      : { visualRow: row, visualCol: col };
+  };
+
+  // Efecto para el temporizador
   useEffect(() => {
-    let interval = null;
+    let interval: NodeJS.Timeout | null = null;
 
     if (isPlay && !gameResult?.isGameOver) {
       interval = setInterval(() => {
@@ -49,7 +82,7 @@ const Board = ({
     };
   }, [currentTurn, gameResult, isPlay]);
 
-  // Resetear temporizadores cuando se reinicia el juego
+  // Resetear tiempos cuando se reinicia el juego
   useEffect(() => {
     if (!isPlay) {
       setBlackTime(1 * 60);
@@ -57,22 +90,27 @@ const Board = ({
     }
   }, [isPlay]);
 
-  // Verificar si algún jugador se quedó sin tiempo
+  // Verificar si se acabó el tiempo
   useEffect(() => {
     if (whiteTime === 0) {
       resetGame("b", "timeout");
     } else if (blackTime === 0) {
       resetGame("w", "timeout");
     }
-  }, [whiteTime, blackTime ]);
+  }, [whiteTime, blackTime, resetGame]);
 
-  const isKingInCheck = (rowIndex: number, colIndex: number) => {
-    const piece = board[rowIndex][colIndex];
+  const handleVisualClick = (visualRow: number, visualCol: number) => {
+    const { row, col } = visualToLogical(visualRow, visualCol);
+    handleSquareClick(row, col);
+  };
+
+  const isKingInCheck = (row: number, col: number) => {
+    const piece = getPieceAt(row, col);
     return (
       piece?.type === "k" &&
       piece.color === currentTurn &&
       game.isCheck() &&
-      gameResult?.isGameOver === false
+      !gameResult?.isGameOver
     );
   };
 
@@ -85,12 +123,57 @@ const Board = ({
           verbose: true,
         })
         .map((move) => move.to);
-    } catch (e) {
+    } catch {
       return [];
     }
   };
 
   const validMoves = selectedSquare ? getValidMoves() : [];
+  const selectedVisualPos = algebraicToVisual(selectedSquare);
+
+  // Crear un tablero seguro para renderizar
+  const renderBoard = Array(8).fill(null).map((_, visualRow) => {
+    const rowSquares = Array(8).fill(null).map((_, visualCol) => {
+      const { row, col } = visualToLogical(visualRow, visualCol);
+      const piece = getPieceAt(row, col);
+      const square = `${String.fromCharCode(97 + col)}${8 - row}` as Square;
+      
+      const isSelected = selectedVisualPos
+        ? visualRow === selectedVisualPos.visualRow &&
+          visualCol === selectedVisualPos.visualCol
+        : false;
+
+      const isValidMove = validMoves.includes(square);
+      const isCheck = isKingInCheck(row, col);
+
+      return (
+        <Square1
+          key={`${visualRow}-${visualCol}`}
+          color={(row + col) % 2 === 0 ? "#f0d9b5" : "#b58863"}
+          onClick={() => handleVisualClick(visualRow, visualCol)}
+          isSelected={isSelected}
+          isCheck={isCheck}
+          isGameOver={!!gameResult?.isGameOver}
+          isHighlighted={isValidMove && !isSelected}
+        >
+          {piece && <Piece type={piece.type} color={piece.color} />}
+          {isCheck && <div className={style.checkIndicator} />}
+          {isValidMove && !isSelected && !piece && (
+            <div className={style.moveIndicator} />
+          )}
+          {isValidMove && !isSelected && piece && (
+            <div className={style.captureIndicator} />
+          )}
+        </Square1>
+      );
+    });
+
+    return (
+      <div key={visualRow} className={style.row}>
+        {rowSquares}
+      </div>
+    );
+  });
 
   return (
     <section>
@@ -100,45 +183,11 @@ const Board = ({
           <TimerCom isActive={currentTurn === "b" && isPlay} time={blackTime} />
         </div>
       </div>
-      <div className={style.chessBoard}>
-        {board.map((row, rowIndex) => (
-          <div key={rowIndex} className={style.row}>
-            {row.map((piece, colIndex) => {
-              const square = `${String.fromCharCode(97 + colIndex)}${
-                8 - rowIndex
-              }`;
-              const isCheckSquare = isKingInCheck(rowIndex, colIndex);
-              const isValidMove = validMoves.includes(square as Square);
-              const isSelected = selectedSquare === square;
 
-              return (
-                <Square1
-                  key={square}
-                  color={
-                    (rowIndex + colIndex) % 2 === 0 ? "#f0d9b5" : "#b58863"
-                  }
-                  onClick={() => handleSquareClick(rowIndex, colIndex)}
-                  isSelected={isSelected}
-                  isCheck={isCheckSquare}
-                  isGameOver={gameResult?.isGameOver || false}
-                  isHighlighted={isValidMove && !isSelected}
-                >
-                  {piece && <Piece type={piece.type} color={piece.color} />}
-                  {isCheckSquare && (
-                    <div className={style.checkIndicator}></div>
-                  )}
-                  {isValidMove && !isSelected && !piece && (
-                    <div className={style.moveIndicator}></div>
-                  )}
-                  {isValidMove && !isSelected && piece && (
-                    <div className={style.captureIndicator}></div>
-                  )}
-                </Square1>
-              );
-            })}
-          </div>
-        ))}
+      <div className={style.chessBoard}>
+        {renderBoard}
       </div>
+
       <div className="flex justify-between pt-2">
         <h2>Turno: {currentTurn === "w" ? "Blancas" : "Negras"}</h2>
         <div className="flex gap-4">
