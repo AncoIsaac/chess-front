@@ -94,75 +94,64 @@ const useChessGame = (gameId: string) => {
   };
 
   // Handle square click and move logic
-  const handleSquareClick = useCallback(
-    (row: number, col: number) => {
-      if (gameResult?.isGameOver || !isConnected || !socketRef.current) return;
+  const handleSquareClick = (row: number, col: number) => {
+    if (gameResult?.isGameOver || !isConnected || !socketRef.current) return;
 
-      const square = `${String.fromCharCode(97 + col)}${8 - row}` as Square;
+    const square = `${String.fromCharCode(97 + col)}${8 - row}` as Square;
 
-      if (!selectedSquare) {
-        const piece = game.get(square);
-        if (piece && piece.color === playerColor) {
-          setSelectedSquare(square);
-        }
-      } else {
-        try {
-          const move = {
-            from: selectedSquare,
-            to: square,
-            promotion: "q",
-          };
-
-          if (game.turn() !== playerColor) {
-            throw new Error("Not your turn");
-          }
-
-          const tempGame = new Chess(game.fen());
-          const result = tempGame.move(move);
-
-          if (!result) {
-            throw new Error("Invalid move");
-          }
-
-          socketRef.current.emit("makeMove", { gameId, move });
-          game.move(move);
-          updateBoard();
-        } catch (err) {
-          const error = err instanceof Error ? err.message : "Invalid move";
-          setError(error);
-          setTimeout(() => setError(null), 3000);
-        } finally {
-          setSelectedSquare(null);
-        }
+    if (!selectedSquare) {
+      const piece = game.get(square);
+      if (piece && piece.color === playerColor) {
+        setSelectedSquare(square);
       }
-    },
-    [
-      game,
-      gameId,
-      gameResult,
-      isConnected,
-      playerColor,
-      selectedSquare,
-      updateBoard,
-    ]
-  );
+    } else {
+      try {
+        const move = {
+          from: selectedSquare,
+          to: square,
+          promotion: "q",
+        };
+
+        if (game.turn() !== playerColor) {
+          throw new Error("Not your turn");
+        }
+
+        const tempGame = new Chess(game.fen());
+        const result = tempGame.move(move);
+
+        if (!result) {
+          throw new Error("Invalid move");
+        }
+
+        socketRef.current.emit("makeMove", { gameId, move });
+        game.move(move);
+        updateBoard();
+      } catch (err) {
+        const error = err instanceof Error ? err.message : "Invalid move";
+        setError(error);
+        setTimeout(() => setError(null), 3000);
+      } finally {
+        setSelectedSquare(null);
+      }
+    }
+  };
 
   // Reset game state
-  const resetGame = useCallback(
-    (winner: PieceColor | null = null, reason: string = "reset") => {
-      game.reset();
-      updateBoard();
+  const resetGame = (
+    winner: PieceColor | null = null,
+    reason: string = "reset"
+  ) => {
+    game.reset();
+    updateBoard();
 
-      setGameResult({
-        winner,
-        reason: reason as any,
-        isGameOver: winner !== null,
-      });
-      setGameStatus(winner !== null ? "finished" : "waiting");
-      setSelectedSquare(null);
-    },
-    [game, updateBoard]
-  );
+    setGameResult({
+      winner,
+      reason: reason as any,
+      isGameOver: winner !== null,
+    });
+    setGameStatus(winner !== null ? "finished" : "waiting");
+    setSelectedSquare(null);
+  };
 
   // Offer draw function
   const offerDraw = useCallback(() => {
@@ -196,17 +185,15 @@ const useChessGame = (gameId: string) => {
 
     // Y modifica el manejador de connect:
     const handleConnect = async () => {
-      setIsConnected(true);
       const user = socket.emit("joinGame", {
         gameId,
         userId: localStorage.getItem("user"), // Asegúrate de pasar el ID del usuario
       });
-
-      console.log("user", user);
+      setIsConnected(user.connected);
     };
 
     const handleDisconnect = () => {
-      setIsConnected(false);
+      // setIsConnected(false);
       setGameStatus("waiting" as GameStatus);
     };
 
@@ -215,7 +202,7 @@ const useChessGame = (gameId: string) => {
       fen: string;
       playerColor?: PieceColor;
       status?: GameStatus;
-      opponentConnected?: boolean;
+      opponentConnected: boolean;
     }) => {
       game.load(gameData.fen);
       if (gameData.playerColor) {
@@ -225,7 +212,24 @@ const useChessGame = (gameId: string) => {
         setGameStatus(gameData.status);
       }
       // Always update opponentConnected if provided
-      setOpponentConnected(gameData.opponentConnected ?? false);
+      setOpponentConnected(gameData.opponentConnected);
+      updateBoard();
+    };
+
+    const handleMoveMade = (gameData: {
+      fen: string;
+      status?: GameStatus;
+      opponentConnected: boolean;
+      currentTurn?: PieceColor;
+    }) => {
+      game.load(gameData.fen);
+      if (gameData.status) {
+        setGameStatus(gameData.status);
+      }
+      setOpponentConnected(gameData.opponentConnected);
+      if (gameData.currentTurn) {
+        setCurrentTurn(gameData.currentTurn);
+      }
       updateBoard();
     };
 
@@ -251,7 +255,7 @@ const useChessGame = (gameId: string) => {
     socket.on("gameState", handleGameState);
     socket.on("playerConnected", handlePlayerConnected);
     socket.on("playerDisconnected", handlePlayerDisconnected);
-    socket.on("moveMade", handleGameState);
+    socket.on("moveMade", handleMoveMade);
     socket.on("moveError", handleMoveError);
     socket.on("drawOffered", () => {
       setError("Your opponent offered a draw");

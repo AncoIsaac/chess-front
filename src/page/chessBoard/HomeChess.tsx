@@ -4,7 +4,7 @@ import useChessGame from "../../hooks/useChessGame";
 import GameStatus from "../../components/chess/GameStatus";
 
 const HomeChess = () => {
-  const gameId = "d7486cdc-6c47-454d-9506-aeedb35a0dda";
+  const gameId = "8fa94e03-bfa0-417c-93c8-7dce6d4d2093";
   const {
     board,
     handleSquareClick,
@@ -20,8 +20,6 @@ const HomeChess = () => {
     resignGame,
   } = useChessGame(gameId);
 
-  console.log('opponentConnected', opponentConnected)
-  console.log('isConnected', isConnected)
 
   const [isDrawOffered, setIsDrawOffered] = useState(false);
 

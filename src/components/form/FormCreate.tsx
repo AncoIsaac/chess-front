@@ -36,8 +36,6 @@ const FormCreate = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // const response = await trigger(dataSend);
-    // console.log("response", response);
   };
 
   return (

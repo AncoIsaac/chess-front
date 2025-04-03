@@ -35,7 +35,6 @@ const FormLogin = () => {
   const onSubmit = async (data: LoginFormData) => {
     try {
       const response = await trigger(data);
-      console.log('response.data.id', response.id)
       localStorage.setItem('user', response.id);
       toast.success('hola');
       navigate('/home')

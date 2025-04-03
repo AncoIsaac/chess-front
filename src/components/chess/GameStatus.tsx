@@ -17,7 +17,6 @@ const GameStatus: React.FC<GameStatusProps> = ({
   opponentConnected,
 }) => {
 
-  console.log('opponentConnected', opponentConnected)
   if (!isConnected) {
     return (
       <div className="bg-yellow-100 text-yellow-800 p-2 rounded mb-4">
