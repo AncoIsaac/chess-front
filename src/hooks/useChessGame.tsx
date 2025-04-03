@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Chess, Square } from "chess.js";
 import { io, Socket } from "socket.io-client";
 import {
@@ -6,6 +6,7 @@ import {
   PieceColor,
   PieceType,
   GameResult,
+  GameStatus,
 } from "../types/chessTypes";
 
 const useChessGame = (gameId: string) => {
@@ -18,16 +19,20 @@ const useChessGame = (gameId: string) => {
     reason: "checkmate",
     isGameOver: false,
   });
-  const [socket, setSocket] = useState<Socket | null>(null);
+  const [gameStatus, setGameStatus] = useState<GameStatus>("waiting");
+
+  const socketRef = useRef<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [playerColor, setPlayerColor] = useState<PieceColor | null>(null);
   const [opponentConnected, setOpponentConnected] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Función para actualizar el tablero
+  // Memoized board update function
   const updateBoard = useCallback(() => {
     const newBoard: ChessBoard = Array(8)
       .fill(null)
       .map(() => Array(8).fill(null));
+
     game.board().forEach((row, rowIndex) => {
       row.forEach((piece, colIndex) => {
         if (piece) {
@@ -44,71 +49,15 @@ const useChessGame = (gameId: string) => {
     checkGameResult();
   }, [game]);
 
-  // Configuración del socket y listeners
-  useEffect(() => {
-    const newSocket = io("http://localhost:3000", {
-      transports: ["websocket"],
-      withCredentials: true,
-      autoConnect: true,
-    });
-
-    setSocket(newSocket);
-
-    newSocket.on("connect", () => {
-      console.log('connect')
-      setIsConnected(true);
-      newSocket.emit("joinGame", gameId);
-    });
-
-    newSocket.on("disconnect", () => {
-      setIsConnected(false);
-    });
-
-    newSocket.on("gameState", (gameData) => {
-      game.load(gameData.fen);
-      if (gameData.playerColor) {
-        setPlayerColor(gameData.playerColor);
-      }
-      updateBoard();
-
-      // Verificar si el oponente está conectado
-      if (
-        gameData.fen !==
-          "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-      ) {
-        setOpponentConnected(true);
-      }
-    });
-
-    newSocket.on("moveMade", (updatedGame) => {
-      game.load(updatedGame.fen);
-      updateBoard();
-      setOpponentConnected(true); // Si recibimos un movimiento, el oponente está conectado
-    });
-
-    newSocket.on("moveError", (error) => {
-      console.error("Error en el movimiento:", error);
-      // Forzar actualización para revertir cambios visuales
-      updateBoard();
-    });
-
-    return () => {
-      newSocket.disconnect();
-    };
-  }, [gameId, game, updateBoard]);
-
-  // Inicializar el tablero
-  useEffect(() => {
-    updateBoard();
-  }, [updateBoard]);
-
-  const checkGameResult = () => {
+  // Check game result and update state
+  const checkGameResult = useCallback(() => {
     if (game.isCheckmate()) {
       setGameResult({
         winner: game.turn() === "w" ? "b" : "w",
         reason: "checkmate",
         isGameOver: true,
       });
+      setGameStatus("finished");
     } else if (game.isDraw()) {
       setGameResult({
         winner: null,
@@ -119,20 +68,23 @@ const useChessGame = (gameId: string) => {
           | "fifty_move_rule",
         isGameOver: true,
       });
+      setGameStatus("finished");
     } else if (game.isCheck()) {
       setGameResult({
         winner: null,
-        reason: "check",
+        reason: "checkmate",
         isGameOver: false,
       });
+      setGameStatus("in_progress");
     } else {
       setGameResult({
         winner: null,
         reason: "checkmate",
         isGameOver: false,
       });
+      setGameStatus(game.history().length > 0 ? "in_progress" : "waiting");
     }
-  };
+  }, [game]);
 
   const getDrawReason = (): string => {
     if (game.isStalemate()) return "stalemate";
@@ -141,76 +93,195 @@ const useChessGame = (gameId: string) => {
     return "fifty_move_rule";
   };
 
-  const handleSquareClick = (row: number, col: number) => {
-    if (gameResult?.isGameOver || !isConnected || !socket) return;
+  // Handle square click and move logic
+  const handleSquareClick = useCallback(
+    (row: number, col: number) => {
+      if (gameResult?.isGameOver || !isConnected || !socketRef.current) return;
 
-    const square = `${String.fromCharCode(97 + col)}${8 - row}` as Square;
+      const square = `${String.fromCharCode(97 + col)}${8 - row}` as Square;
 
-    if (!selectedSquare) {
-      const piece = game.get(square);
-      // Solo permitir seleccionar piezas del color del jugador
-      if (piece && piece.color === playerColor) {
-        setSelectedSquare(square);
+      if (!selectedSquare) {
+        const piece = game.get(square);
+        if (piece && piece.color === playerColor) {
+          setSelectedSquare(square);
+        }
+      } else {
+        try {
+          const move = {
+            from: selectedSquare,
+            to: square,
+            promotion: "q",
+          };
+
+          if (game.turn() !== playerColor) {
+            throw new Error("Not your turn");
+          }
+
+          const tempGame = new Chess(game.fen());
+          const result = tempGame.move(move);
+
+          if (!result) {
+            throw new Error("Invalid move");
+          }
+
+          socketRef.current.emit("makeMove", { gameId, move });
+          game.move(move);
+          updateBoard();
+        } catch (err) {
+          const error = err instanceof Error ? err.message : "Invalid move";
+          setError(error);
+          setTimeout(() => setError(null), 3000);
+        } finally {
+          setSelectedSquare(null);
+        }
       }
-    } else {
-      try {
-        const move = {
-          from: selectedSquare,
-          to: square,
-          promotion: "q",
-        };
+    },
+    [
+      game,
+      gameId,
+      gameResult,
+      isConnected,
+      playerColor,
+      selectedSquare,
+      updateBoard,
+    ]
+  );
 
-        // Validación adicional: verificar que es el turno del jugador
-        if (game.turn() !== playerColor) {
-          throw new Error("No es tu turno");
-        }
+  // Reset game state
+  const resetGame = useCallback(
+    (winner: PieceColor | null = null, reason: string = "reset") => {
+      game.reset();
+      updateBoard();
 
-        const tempGame = new Chess(game.fen());
-        const result = tempGame.move(move);
-        
-        if (!result) {
-          throw new Error("Movimiento inválido");
-        }
-
-        socket.emit('makeMove', { gameId, move });
-        game.move(move);
-        updateBoard();
-      }  catch (error) {
-        console.error("Error en el movimiento:", error);
-        if (error instanceof Error) {
-          socket.emit('moveError', error.message);
-        } else {
-          socket.emit('moveError', 'An unknown error occurred');
-        }
-      } finally {
-        setSelectedSquare(square);
-      }
-    }
-  };
-
-  const resetGame = (
-    winner: PieceColor | null = null,
-    reason: string = "reset"
-  ) => {
-    game.reset();
-    updateBoard();
-
-    if (winner !== null) {
       setGameResult({
         winner,
         reason: reason as any,
+        isGameOver: winner !== null,
+      });
+      setGameStatus(winner !== null ? "finished" : "waiting");
+      setSelectedSquare(null);
+    },
+    [game, updateBoard]
+  );
+
+  // Offer draw function
+  const offerDraw = useCallback(() => {
+    if (socketRef.current && isConnected) {
+      socketRef.current.emit("offerDraw", { gameId });
+    }
+  }, [gameId, isConnected]);
+
+  // Resign game function
+  const resignGame = useCallback(() => {
+    if (socketRef.current && isConnected) {
+      socketRef.current.emit("resignGame", { gameId });
+      setGameStatus("finished");
+      setGameResult({
+        winner: playerColor === "w" ? "b" : "w",
+        reason: "checkmate",
         isGameOver: true,
       });
-    } else {
+    }
+  }, [gameId, isConnected, playerColor]);
+
+  // Socket connection and event handlers
+  useEffect(() => {
+    const socket = io("http://localhost:3000", {
+      transports: ["websocket"],
+      withCredentials: true,
+      autoConnect: true,
+    });
+
+    socketRef.current = socket;
+
+    // Y modifica el manejador de connect:
+    const handleConnect = async () => {
+      setIsConnected(true);
+      const user = socket.emit("joinGame", {
+        gameId,
+        userId: localStorage.getItem("user"), // Asegúrate de pasar el ID del usuario
+      });
+
+      console.log("user", user);
+    };
+
+    const handleDisconnect = () => {
+      setIsConnected(false);
+      setGameStatus("waiting" as GameStatus);
+    };
+
+    // Inside the useEffect socket setup:
+    const handleGameState = (gameData: {
+      fen: string;
+      playerColor?: PieceColor;
+      status?: GameStatus;
+      opponentConnected?: boolean;
+    }) => {
+      game.load(gameData.fen);
+      if (gameData.playerColor) {
+        setPlayerColor(gameData.playerColor);
+      }
+      if (gameData.status) {
+        setGameStatus(gameData.status);
+      }
+      // Always update opponentConnected if provided
+      setOpponentConnected(gameData.opponentConnected ?? false);
+      updateBoard();
+    };
+
+    const handlePlayerConnected = () => {
+      setOpponentConnected(true);
+      setGameStatus("in_progress");
+    };
+
+    const handlePlayerDisconnected = (data: { message: string }) => {
+      setOpponentConnected(false);
+      setGameStatus("abandoned");
+      setError(data.message);
+      setTimeout(() => setError(null), 5000);
+    };
+
+    const handleMoveError = (error: { message: string }) => {
+      setError(error.message);
+      setTimeout(() => setError(null), 3000);
+    };
+
+    socket.on("connect", handleConnect);
+    socket.on("disconnect", handleDisconnect);
+    socket.on("gameState", handleGameState);
+    socket.on("playerConnected", handlePlayerConnected);
+    socket.on("playerDisconnected", handlePlayerDisconnected);
+    socket.on("moveMade", handleGameState);
+    socket.on("moveError", handleMoveError);
+    socket.on("drawOffered", () => {
+      setError("Your opponent offered a draw");
+      setTimeout(() => setError(null), 5000);
+    });
+    socket.on("drawAccepted", () => {
+      setGameStatus("finished");
       setGameResult({
         winner: null,
-        reason: "checkmate",
-        isGameOver: false,
+        reason: "insufficient_material",
+        isGameOver: true,
       });
-    }
+    });
 
-    setSelectedSquare(null);
-  };
+    return () => {
+      socket.off("connect", handleConnect);
+      socket.off("disconnect", handleDisconnect);
+      socket.off("gameState", handleGameState);
+      socket.off("playerConnected", handlePlayerConnected);
+      socket.off("playerDisconnected", handlePlayerDisconnected);
+      socket.off("moveMade", handleGameState);
+      socket.off("moveError", handleMoveError);
+      socket.disconnect();
+    };
+  }, [gameId, game, updateBoard]);
+
+  // Initialize board
+  useEffect(() => {
+    updateBoard();
+  }, [updateBoard]);
 
   return {
     board,
@@ -218,11 +289,15 @@ const useChessGame = (gameId: string) => {
     selectedSquare,
     currentTurn,
     gameResult,
+    gameStatus,
     resetGame,
     game,
     isConnected,
     playerColor,
     opponentConnected,
+    error,
+    offerDraw,
+    resignGame,
   };
 };
 

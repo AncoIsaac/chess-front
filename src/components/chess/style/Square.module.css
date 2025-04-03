@@ -1,4 +1,4 @@
-.square {
+/* .square {
   width: 100%;
   height: 9.9vh;
   display: flex;
@@ -25,4 +25,47 @@
   color: red;
   z-index: 10;
   pointer-events: none;
+} */
+.square {
+  width: 100%;
+  aspect-ratio: 1/1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  border: none;
+  padding: 0;
 }
+
+.square:focus-visible {
+  outline: 2px solid #4d90fe;
+  z-index: 1;
+}
+
+.selectedOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(20, 85, 30, 0.5);
+}
+
+.checkIndicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255, 0, 0, 0.4);
+}
+
+.moveIndicator {
+  position: absolute;
+  width: 30%;
+  height: 30%;
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.3);
+}
+
+/* For capture moves, we'll use the background color instead */

@@ -6,7 +6,8 @@ interface SquareProps {
   isSelected: boolean;
   isCheck: boolean;
   isGameOver: boolean;
-  isHighlighted?: boolean; // Nueva prop para movimientos válidos
+  isHighlighted?: boolean;
+  isCapture?: boolean;
   children?: React.ReactNode;
 }
 
@@ -16,23 +17,47 @@ const Square1 = ({
   isSelected,
   isCheck,
   isGameOver,
-  isHighlighted = false, // Valor por defecto
+  isHighlighted = false,
+  isCapture = false,
   children,
 }: SquareProps) => {
+  // Calculate dynamic styles
+  const getSquareStyle = () => {
+    let backgroundColor = color;
+    
+    if (isHighlighted) {
+      backgroundColor = isCapture 
+        ? `color-mix(in srgb, ${color} 60%, #ff0000)` // Red tint for captures
+        : `color-mix(in srgb, ${color} 70%, #6b8e23)`; // Green tint for moves
+    }
+    
+    return {
+      backgroundColor,
+      cursor: isGameOver ? 'default' : 'pointer',
+      position: 'relative' as const,
+    };
+  };
+
   return (
     <button
       className={style.square}
-      style={{
-        backgroundColor: isHighlighted 
-          ? `color-mix(in srgb, ${color} 70%, #6b8e23)` 
-          : color,
-        position: "relative",
-      }}
+      style={getSquareStyle()}
       onClick={isGameOver ? undefined : onClick}
+      aria-label="Chess square"
+      disabled={isGameOver}
     >
       {children}
+      
+      {/* Selection indicator */}
       {isSelected && <div className={style.selectedOverlay} />}
-      {isCheck && <div className={style.checkKingIndicator}>🔥</div>}
+      
+      {/* Check indicator */}
+      {isCheck && <div className={style.checkIndicator} />}
+      
+      {/* Move indicator (only for empty squares) */}
+      {isHighlighted && !isCapture && (
+        <div className={style.moveIndicator} />
+      )}
     </button>
   );
 };

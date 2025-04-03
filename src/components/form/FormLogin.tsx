@@ -10,7 +10,7 @@ import { useNavigate } from "react-router";
 
 const loginSchema = z.object({
   email: z.string().email("El email es invalido").min(1, "Email es requerido"),
-  password: z.string()
+  // password: z.string()
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
@@ -35,7 +35,9 @@ const FormLogin = () => {
   const onSubmit = async (data: LoginFormData) => {
     try {
       const response = await trigger(data);
-      toast.success(response.message);
+      console.log('response.data.id', response.id)
+      localStorage.setItem('user', response.id);
+      toast.success('hola');
       navigate('/home')
     } catch (error: any) {
       toast.error(String(error?.response.data?.message));
@@ -58,7 +60,7 @@ const FormLogin = () => {
         )}
       </div>
 
-      <div className={style.passwordContainer}>
+      {/* <div className={style.passwordContainer}>
         <label>Password <span className="text-red-500">*</span></label>
         <input
           {...register("password")}
@@ -101,7 +103,7 @@ const FormLogin = () => {
         {errors.password && (
           <p className="text-red-500 text-sm">{errors.password.message}</p>
         )}
-      </div>
+      </div> */}
       <button className={style.button} type="submit">
         Iniciar Sesión
       </button>
