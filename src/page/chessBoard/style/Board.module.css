@@ -1,4 +1,4 @@
-.chessBoard {
+/* .chessBoard {
     display: flex;
     flex-direction: column;
     width: 45.5vw;
@@ -12,7 +12,6 @@
     flex: 1;
 }
 
-/* Board.module.css */
 .moveIndicator {
     width: 25%;
     height: 25%;
@@ -29,4 +28,40 @@
     border-radius: 50%;
     position: absolute;
     box-sizing: border-box;
+  } */
+
+  .boardContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+  
+  .chessBoard {
+    display: inline-block;
+    border: 2px solid #333;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  }
+  
+  .row {
+    display: flex;
+    height: calc(100% / 8);
+  }
+  
+  .timerContainer {
+    display: flex;
+    justify-content: center;
+    padding: 0.5rem;
+    background-color: #f5f5f5;
+    border-radius: 4px;
+  }
+  
+  .gameOverBanner {
+    text-align: center;
+    padding: 1rem;
+    background-color: #333;
+    color: white;
+    border-radius: 4px;
+    font-weight: bold;
   }

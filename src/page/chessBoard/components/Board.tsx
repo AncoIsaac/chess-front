@@ -1,9 +1,5 @@
 import { useEffect, useState } from "react";
 import { Chess, Square } from "chess.js";
-// import Square1 from "./Square";
-// import Piece from "./Piece";
-// import TimerCom from "./Timer";
-// import { ChessBoard, GameResult, PieceColor } from "../types/chessTypes";
 import style from "../style/Board.module.css";
 import { ChessBoard, GameResult, PieceColor } from "../../../types/chessTypes";
 import TimerCom from "../../../components/timer/TimerCom";
@@ -176,26 +172,34 @@ const Board = ({
   });
 
   return (
-    <section>
-      <div className="flex justify-between">
-        <h2>Turno: {currentTurn === "w" ? "Blancas" : "Negras"}</h2>
-        <div className="flex gap-4">
-          <TimerCom isActive={currentTurn === "b" && isPlay} time={blackTime} />
-        </div>
-      </div>
+    <section className={style.boardContainer}>
+    {/* Top timer (black) */}
+    <div className={style.timerContainer}>
+      <TimerCom 
+        isActive={currentTurn === "b" && isPlay} 
+        time={blackTime} 
+        color="black"
+        isPlayerTurn={currentTurn === playerColor}
+      />
+    </div>
 
-      <div className={style.chessBoard}>
-        {renderBoard}
-      </div>
+    {/* Chess board */}
+    <div className={style.chessBoard}>
+      {renderBoard}
+    </div>
 
-      <div className="flex justify-between pt-2">
-        <h2>Turno: {currentTurn === "w" ? "Blancas" : "Negras"}</h2>
-        <div className="flex gap-4">
-          <TimerCom isActive={currentTurn === "w" && isPlay} time={whiteTime} />
-        </div>
-      </div>
-    </section>
-  );
+    {/* Bottom timer (white) */}
+    <div className={style.timerContainer}>
+      <TimerCom 
+        isActive={currentTurn === "w" && isPlay} 
+        time={whiteTime} 
+        color="white"
+        isPlayerTurn={currentTurn === playerColor}
+        
+      />
+    </div> 
+  </section>
+);
 };
 
 export default Board;

@@ -18,7 +18,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 const FormLogin = () => {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
-  const { trigger } = usePost<LoginI, any>("Auth/login");
+  const { trigger } = usePost<LoginI, any>("auth/login");
   
   const { 
     register, 
@@ -35,6 +35,7 @@ const FormLogin = () => {
   const onSubmit = async (data: LoginFormData) => {
     try {
       const response = await trigger(data);
+      localStorage.setItem("idUser", response.data.id);
       toast.success(response.message);
       navigate('/home')
     } catch (error: any) {
