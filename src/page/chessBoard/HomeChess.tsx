@@ -8,6 +8,7 @@ import useGetData from "../../server/hook/useGetData";
 import { getOnlyGameI } from "../../interface/game/getOnlyGame";
 import { usePost } from "../../server/hook/usePost";
 
+
 const HomeChess = () => {
   const [gameId, setGetGameId] = useState<string | null>(null);
   const [play, setPlay] = useState<boolean>(false);
@@ -30,11 +31,14 @@ const HomeChess = () => {
     drawOfferedBy
   } = useChessGame(gameId ? gameId : "");
 
-  const { data, error, isLoading, mutate } = useGetData<getOnlyGameI>(
+  console.log("opponentConnected", opponentConnected);
+  console.log("connection", isConnected);
+
+  const { data, error, } = useGetData<getOnlyGameI>(
     gameId ? `games/${gameId}` : ""
   );
 
-  const { trigger } = usePost<{ firstPlayerId: string }, any>("games");
+  const { trigger } = usePost<{ firstPlayerId: string }, any>("games/joinGame");
 
   const formatDrawReason = (reason: string) => {
     const reasons: Record<string, string> = {
@@ -79,9 +83,16 @@ const HomeChess = () => {
       setPlay(true);
       toast.info("Partida creada. Esperando oponente...");
     } catch (error) {
-      toast.error(`Error al crear la partida: ${error}`);
+      if (error instanceof Error && 'response' in error) {
+        const axiosError = error as { response: { data: { data: string } } };
+        console.log(axiosError.response.data.data);
+        setGetGameId(axiosError.response.data.data)
+      }
+      // toast.error(`Error al crear la partida: ${error}`);
     }
   };
+
+  if (error) return <div>Ocurrio un error</div>
 
   return (
     <div className="w-full flex flex-col md:flex-row gap-4 p-4 max-w-6xl mx-auto">
@@ -128,11 +139,10 @@ const HomeChess = () => {
                   <div className="space-y-4">
                     <h2 className="text-2xl font-bold">
                       {gameResult.winner
-                        ? `🏆 ${
-                            gameResult.winner === "w"
-                              ? "¡Blancas ganan!"
-                              : "¡Negras ganan!"
-                          }`
+                        ? `🏆 ${gameResult.winner === "w"
+                          ? "¡Blancas ganan!"
+                          : "¡Negras ganan!"
+                        }`
                         : "🤝 ¡Empate!"}
                     </h2>
                     <p className="text-gray-600">
@@ -200,7 +210,7 @@ const HomeChess = () => {
             </span>
           </h2>
           <div className="h-64 overflow-y-auto pr-2">
-            {gameResult?.isGameOver ? (
+            {
               data?.moves && data.moves.length > 0 ? (
                 <div className="grid grid-cols-2 gap-1">
                   {Array.from({ length: Math.ceil(data.moves.length / 2) }).map((_, i) => (
@@ -219,26 +229,7 @@ const HomeChess = () => {
                 </div>
               ) : (
                 <p className="text-gray-500 text-center py-8">No hay movimientos registrados</p>
-              )
-            ) : game.history().length === 0 ? (
-              <p className="text-gray-500 text-center py-8">No hay movimientos aún. ¡Haz el primer movimiento!</p>
-            ) : (
-              <div className="grid grid-cols-2 gap-1">
-                {Array.from({ length: Math.ceil(game.history().length / 2) }).map((_, i) => (
-                  <div key={i} className="grid grid-cols-3 gap-1 items-center">
-                    <span className="text-gray-500 text-right pr-2">{i + 1}.</span>
-                    <span className="px-2 py-1 hover:bg-gray-50 rounded">
-                      {game.history()[i * 2]}
-                    </span>
-                    {game.history()[i * 2 + 1] && (
-                      <span className="px-2 py-1 hover:bg-gray-50 rounded">
-                        {game.history()[i * 2 + 1]}
-                      </span>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
+              )}
           </div>
         </div>
 
@@ -258,11 +249,10 @@ const HomeChess = () => {
 
             <button
               onClick={handleOfferDrawClick}
-              className={`${
-                isDrawOffered
-                  ? "bg-yellow-500 hover:bg-yellow-600"
-                  : "bg-blue-500 hover:bg-blue-600"
-              } text-white px-3 py-2 rounded transition-colors flex items-center justify-center gap-1`}
+              className={`${isDrawOffered
+                ? "bg-yellow-500 hover:bg-yellow-600"
+                : "bg-blue-500 hover:bg-blue-600"
+                } text-white px-3 py-2 rounded transition-colors flex items-center justify-center gap-1`}
               disabled={!opponentConnected || gameResult?.isGameOver || isDrawOffered}
             >
               <span>🤝</span> {isDrawOffered ? "Tablas ofrecidas" : "Ofrecer tablas"}
@@ -299,10 +289,10 @@ const HomeChess = () => {
                 {!isConnected
                   ? "Conectando..."
                   : !opponentConnected
-                  ? "Esperando oponente..."
-                  : gameResult?.isGameOver
-                  ? "Partida terminada"
-                  : "En progreso"}
+                    ? "Esperando oponente..."
+                    : gameResult?.isGameOver
+                      ? "Partida terminada"
+                      : "En progreso"}
               </span>
             </div>
             {isDrawOffered && drawOfferedBy === playerColor && (

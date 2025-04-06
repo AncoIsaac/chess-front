@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Chess, Square } from "chess.js";
 import { ChessBoard, PieceColor, PieceType, GameResult } from "../types/chessTypes";
 import useChessSocket from "./useChessSocket";
+import { toast } from "react-toastify";
 
 const useChessGame = (gameId: string) => {
   // Game state
@@ -19,12 +20,12 @@ const useChessGame = (gameId: string) => {
   const [drawOfferedBy, setDrawOfferedBy] = useState<PieceColor | null>(null);
 
   // Socket connection
-  const { 
-    socket, 
-    isConnected, 
-    opponentConnected, 
-    setOpponentConnected, 
-    emitMove, 
+  const {
+    socket,
+    isConnected,
+    opponentConnected,
+    setOpponentConnected,
+    emitMove,
     emitError,
     resignGame,
     offerDraw,
@@ -34,7 +35,7 @@ const useChessGame = (gameId: string) => {
   // Update board state from game FEN
   const updateBoard = useCallback(() => {
     const newBoard: ChessBoard = Array(8).fill(null).map(() => Array(8).fill(null));
-    
+
     game.board().forEach((row, rowIndex) => {
       row.forEach((piece, colIndex) => {
         if (piece) {
@@ -99,10 +100,6 @@ const useChessGame = (gameId: string) => {
       game.load(gameData.fen);
       if (gameData.playerColor) setPlayerColor(gameData.playerColor);
       updateBoard();
-      
-      if (gameData.secondPlayerId) {
-        setOpponentConnected(true);
-      } 
     };
 
     const handleMoveMade = (updatedGame: { fen: string }) => {
@@ -141,7 +138,13 @@ const useChessGame = (gameId: string) => {
     socket.on("gameResigned", handleGameResigned);
     socket.on("drawOffered", handleDrawOffered);
     socket.on("gameEnded", handleGameEnded);
+    socket.on('opponentConnected', (data) => {
+      console.log('¡El oponente se ha conectado!', data);
+      // Actualizar el estado de tu aplicación
+      setOpponentConnected(true);
 
+      toast.success('¡El oponente se ha unido al juego!');
+    });
     return () => {
       socket.off("gameState", handleGameState);
       socket.off("moveMade", handleMoveMade);
@@ -176,7 +179,7 @@ const useChessGame = (gameId: string) => {
 
       const tempGame = new Chess(game.fen());
       const result = tempGame.move(move);
-      
+
       if (!result) throw new Error("Invalid move");
       if (game.turn() !== playerColor) throw new Error("Not your turn");
 
@@ -187,7 +190,7 @@ const useChessGame = (gameId: string) => {
       console.error("Move error:", error);
       emitError(error instanceof Error ? error.message : "Unknown error");
     } finally {
-      setSelectedSquare(null);
+      setSelectedSquare(square);
     }
   };
 
@@ -203,6 +206,7 @@ const useChessGame = (gameId: string) => {
     setSelectedSquare(null);
     setIsDrawOffered(false);
     setDrawOfferedBy(null);
+    setOpponentConnected(false)
   }, [game, updateBoard]);
 
   // Handle resign
@@ -232,7 +236,7 @@ const useChessGame = (gameId: string) => {
     board,
     currentTurn,
     selectedSquare,
-    
+
     // Game status
     gameResult,
     isConnected,
@@ -240,14 +244,14 @@ const useChessGame = (gameId: string) => {
     opponentConnected,
     isDrawOffered,
     drawOfferedBy,
-    
+
     // Actions
     handleSquareClick,
     resetGame,
     handleResign,
     handleOfferDraw,
     handleAcceptDraw,
-    
+
     // Expose for debugging/advanced use
     game,
   };
