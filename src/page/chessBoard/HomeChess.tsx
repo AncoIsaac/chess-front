@@ -1,6 +1,6 @@
 import Board from "./components/Board";
 import useChessGame from "../../hooks/useChessGame";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import GameStatus from "../../components/chess/GameStatus";
 import { Play } from "lucide-react";
@@ -39,6 +39,27 @@ const HomeChess = () => {
   );
 
   const { trigger } = usePost<{ firstPlayerId: string }, any>("games/joinGame");
+
+  useEffect(() => {
+    if (gameResult.isGameOver) {
+      let message = '';
+      
+      if (gameResult.winner) {
+        const winnerText = gameResult.winner === 'w' ? 'Blancas' : 'Negras';
+        message = `¡${winnerText} ganan por ${formatDrawReason(gameResult.reason)}!`;
+        
+        // Mostrar mensaje especial si el jugador actual ganó/perdió
+        if (playerColor === gameResult.winner) {
+          toast.success(`¡Ganaste! ${message}`);
+        } else {
+          toast.error(`Perdiste. ${message}`);
+        }
+      } else {
+        message = `¡Empate por ${formatDrawReason(gameResult.reason)}!`;
+        toast.info(message);
+      }
+    }
+  }, [gameResult, playerColor]);
 
   const formatDrawReason = (reason: string) => {
     const reasons: Record<string, string> = {

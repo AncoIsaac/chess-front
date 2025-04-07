@@ -12,10 +12,10 @@ const useChessGame = (gameId: string) => {
   const [currentTurn, setCurrentTurn] = useState<PieceColor>("w");
   const [gameResult, setGameResult] = useState<GameResult>({
     winner: null,
-    reason: "checkmate",
+    reason: "stalemate" as "check" | "checkmate" | "stalemate" | "threefold_repetition" | "insufficient_material" | "fifty_move_rule",
     isGameOver: false,
   });
-  const [playerColor, setPlayerColor] = useState<PieceColor | null>(null);
+  const [validMoves, setValidMoves] = useState<Square[]>([]);
   const [isDrawOffered, setIsDrawOffered] = useState(false);
   const [drawOfferedBy, setDrawOfferedBy] = useState<PieceColor | null>(null);
 
@@ -24,6 +24,7 @@ const useChessGame = (gameId: string) => {
     socket,
     isConnected,
     opponentConnected,
+    playerColor,
     setOpponentConnected,
     emitMove,
     emitError,
@@ -55,40 +56,58 @@ const useChessGame = (gameId: string) => {
   // Check game status (checkmate, draw, etc.)
   const checkGameResult = useCallback(() => {
     if (game.isCheckmate()) {
+      const winner = game.turn() === "w" ? "b" : "w";
       setGameResult({
-        winner: game.turn() === "w" ? "b" : "w",
+        winner,
         reason: "checkmate",
         isGameOver: true,
       });
+      
+      // Notificar al usuario si ganó o perdió
+      if (playerColor === winner) {
+        toast.success("¡Has ganado por jaque mate!");
+      } else {
+        toast.error("¡Has perdido por jaque mate!");
+      }
     } else if (game.isDraw()) {
       setGameResult({
         winner: null,
-        reason: getDrawReason(),
+        reason: getDrawReason() as "stalemate" | "threefold_repetition" | "insufficient_material" | "fifty_move_rule",
         isGameOver: true,
       });
+      toast.info(`¡Empate por ${getDrawReason()}!`);
     } else if (game.isCheck()) {
       setGameResult({
         winner: null,
         reason: "check",
         isGameOver: false,
       });
+      toast.warning("¡Jaque!");
     } else {
       setGameResult({
         winner: null,
-        reason: "checkmate",
+        reason: getDrawReason() as "stalemate" | "threefold_repetition" | "insufficient_material" | "fifty_move_rule",
         isGameOver: false,
       });
     }
-  }, [game]);
+  }, [game, playerColor]);
 
   // Determine draw reason
-  const getDrawReason = (): GameResult["reason"] => {
-    if (game.isStalemate()) return "stalemate";
-    if (game.isThreefoldRepetition()) return "threefold_repetition";
-    if (game.isInsufficientMaterial()) return "insufficient_material";
-    if (game.isDraw()) return "fifty_move_rule";
-    return "fifty_move_rule";
+  const getDrawReason = (): string => {
+    if (game.isStalemate()) return "ahogado";
+    if (game.isThreefoldRepetition()) return "triple repetición";
+    if (game.isInsufficientMaterial()) return "material insuficiente";
+    if (game.isDraw()) return "regla de los 50 movimientos";
+    return "acuerdo mutuo";
   };
+
+  // Calculate valid moves for selected piece
+  const calculateValidMoves = useCallback((square: Square) => {
+    return game.moves({
+      square,
+      verbose: true
+    }).map(move => move.to as Square);
+  }, [game]);
 
   // Initialize board and socket listeners
   useEffect(() => {
@@ -96,22 +115,23 @@ const useChessGame = (gameId: string) => {
 
     if (!socket) return;
 
-    const handleGameState = (gameData: { fen: string; playerColor?: PieceColor, secondPlayerId: string }) => {
+    const handleGameState = (gameData: { fen: string; playerColor?: PieceColor }) => {
       game.load(gameData.fen);
-      if (gameData.playerColor) setPlayerColor(gameData.playerColor);
       updateBoard();
     };
 
     const handleMoveMade = (updatedGame: { fen: string }) => {
       game.load(updatedGame.fen);
       updateBoard();
+      setSelectedSquare(null);
+      setValidMoves([]);
       setOpponentConnected(true);
     };
 
     const handleGameResigned = (result: { winner: 'w' | 'b', reason: string }) => {
       setGameResult({
         winner: result.winner,
-        reason: result.reason as "check" | "checkmate" | "stalemate" | "threefold_repetition" | "insufficient_material" | "fifty_move_rule",
+        reason: result.reason as any,
         isGameOver: true
       });
       updateBoard();
@@ -120,13 +140,13 @@ const useChessGame = (gameId: string) => {
     const handleDrawOffered = (data: { by: 'w' | 'b' }) => {
       setIsDrawOffered(true);
       setDrawOfferedBy(data.by);
+      toast.info(`¡El oponente ha ofrecido tablas!`);
     };
 
     const handleGameEnded = (result: { winner: 'w' | 'b' | null, reason: string }) => {
       setGameResult({
         winner: result.winner,
-        reason: result.reason as "check" | "checkmate" | "stalemate" | "threefold_repetition" | "insufficient_material" | "fifty_move_rule",
-
+        reason: result.reason as any,
         isGameOver: true
       });
       setIsDrawOffered(false);
@@ -138,13 +158,11 @@ const useChessGame = (gameId: string) => {
     socket.on("gameResigned", handleGameResigned);
     socket.on("drawOffered", handleDrawOffered);
     socket.on("gameEnded", handleGameEnded);
-    socket.on('opponentConnected', (data) => {
-      console.log('¡El oponente se ha conectado!', data);
-      // Actualizar el estado de tu aplicación
+    socket.on('opponentConnected', () => {
       setOpponentConnected(true);
-
       toast.success('¡El oponente se ha unido al juego!');
     });
+
     return () => {
       socket.off("gameState", handleGameState);
       socket.off("moveMade", handleMoveMade);
@@ -165,6 +183,7 @@ const useChessGame = (gameId: string) => {
       const piece = game.get(square);
       if (piece && piece.color === playerColor) {
         setSelectedSquare(square);
+        setValidMoves(calculateValidMoves(square));
       }
       return;
     }
@@ -174,23 +193,30 @@ const useChessGame = (gameId: string) => {
       const move = {
         from: selectedSquare,
         to: square,
-        promotion: "q",
+        promotion: "q", // Always promote to queen for simplicity
       };
 
+      // Validate move locally first
       const tempGame = new Chess(game.fen());
       const result = tempGame.move(move);
 
-      if (!result) throw new Error("Invalid move");
-      if (game.turn() !== playerColor) throw new Error("Not your turn");
+      if (!result) throw new Error("Movimiento inválido");
+      if (game.turn() !== playerColor) throw new Error("No es tu turno");
 
+      // Send move to server
       emitMove(move);
+      
+      // Update local game state
       game.move(move);
       updateBoard();
+      setSelectedSquare(null);
+      setValidMoves([]);
+
     } catch (error) {
       console.error("Move error:", error);
-      emitError(error instanceof Error ? error.message : "Unknown error");
-    } finally {
-      setSelectedSquare(square);
+      emitError(error instanceof Error ? error.message : "Error desconocido");
+      setSelectedSquare(null);
+      setValidMoves([]);
     }
   };
 
@@ -200,19 +226,20 @@ const useChessGame = (gameId: string) => {
     updateBoard();
     setGameResult({
       winner: null,
-      reason: "checkmate",
+      reason: getDrawReason() as "stalemate" | "threefold_repetition" | "insufficient_material" | "fifty_move_rule",
       isGameOver: false,
     });
     setSelectedSquare(null);
+    setValidMoves([]);
     setIsDrawOffered(false);
     setDrawOfferedBy(null);
-    setOpponentConnected(false)
   }, [game, updateBoard]);
 
   // Handle resign
   const handleResign = useCallback(() => {
     if (!playerColor || gameResult.isGameOver) return;
     resignGame();
+    toast.info("Te has rendido");
   }, [playerColor, gameResult, resignGame]);
 
   // Handle offer draw
@@ -221,6 +248,7 @@ const useChessGame = (gameId: string) => {
     offerDraw();
     setIsDrawOffered(true);
     setDrawOfferedBy(playerColor);
+    toast.info("Has ofrecido tablas");
   }, [playerColor, gameResult, offerDraw]);
 
   // Handle accept draw
@@ -229,6 +257,7 @@ const useChessGame = (gameId: string) => {
     acceptDraw();
     setIsDrawOffered(false);
     setDrawOfferedBy(null);
+    toast.success("Has aceptado las tablas");
   }, [isDrawOffered, gameResult, acceptDraw]);
 
   return {
@@ -236,6 +265,7 @@ const useChessGame = (gameId: string) => {
     board,
     currentTurn,
     selectedSquare,
+    validMoves,
 
     // Game status
     gameResult,

@@ -5,7 +5,39 @@ const useChessSocket = (gameId: string) => {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [opponentConnected, setOpponentConnected] = useState(false);
+  const [playerColor, setPlayerColor] = useState<'w' | 'b' | null>(null);
 
+  // Initialize socket and listeners
+  // useEffect(() => {
+  //   if (!gameId) return;
+
+  //   const newSocket = io("http://localhost:3000", {
+  //     transports: ["websocket"],
+  //     withCredentials: true,
+  //     autoConnect: true,
+  //   });
+
+  //   setSocket(newSocket);
+
+  //   const onConnect = () => {
+  //     setIsConnected(true);
+  //     newSocket.emit("joinGame", gameId);
+  //   };
+
+  //   const onDisconnect = () => {
+  //     setIsConnected(false);
+  //     setOpponentConnected(false);
+  //   };
+
+  //   newSocket.on("connect", onConnect);
+  //   newSocket.on("disconnect", onDisconnect);
+
+  //   return () => {
+  //     newSocket.off("connect", onConnect);
+  //     newSocket.off("disconnect", onDisconnect);
+  //     newSocket.disconnect();
+  //   };
+  // }, [gameId]);
   // Initialize socket and listeners
   useEffect(() => {
     if (!gameId) return;
@@ -28,16 +60,29 @@ const useChessSocket = (gameId: string) => {
       setOpponentConnected(false);
     };
 
+    const onGameState = (data: { playerColor?: 'w' | 'b' }) => {
+      if (data.playerColor) {
+        setPlayerColor(data.playerColor);
+      }
+    };
+
+    const onOpponentConnected = () => {
+      setOpponentConnected(true);
+    };
+
     newSocket.on("connect", onConnect);
     newSocket.on("disconnect", onDisconnect);
+    newSocket.on("gameState", onGameState);
+    newSocket.on("opponentConnected", onOpponentConnected);
 
     return () => {
       newSocket.off("connect", onConnect);
       newSocket.off("disconnect", onDisconnect);
+      newSocket.off("gameState", onGameState);
+      newSocket.off("opponentConnected", onOpponentConnected);
       newSocket.disconnect();
     };
   }, [gameId]);
-
   // Emit move to server
   const emitMove = useCallback(
     (move: { from: string; to: string; promotion?: string }) => {
@@ -78,6 +123,7 @@ const useChessSocket = (gameId: string) => {
     socket,
     isConnected,
     opponentConnected,
+    playerColor, // Añadimos esto para tener acceso al color del jugador
     setOpponentConnected,
     emitMove,
     emitError,
